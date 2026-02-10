@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ICT Costing & Margin Calculator</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>ICT Costing & Margin Calculator</h1>
+      <p class="intro">Calculate costing and margin for selling or renting ICT items.</p>
+
+      <form id="calculator-form" class="card">
+        <div class="grid two">
+          <label>
+            Business Model
+            <select id="business-model" name="businessModel">
+              <option value="sell">Sell</option>
+              <option value="rental">Rental</option>
+            </select>
+          </label>
+          <label>
+            Item Name
+            <input id="item-name" name="itemName" type="text" placeholder="Laptop, Router, Server..." />
+          </label>
+        </div>
+
+        <h2>Base Costing</h2>
+        <div class="grid three">
+          <label>
+            Unit Cost (USD)
+            <input id="unit-cost" name="unitCost" type="number" min="0" step="0.01" value="1200" required />
+          </label>
+          <label>
+            Logistics & Installation (USD)
+            <input id="logistics-cost" name="logisticsCost" type="number" min="0" step="0.01" value="100" required />
+          </label>
+          <label>
+            Overhead (%)
+            <input id="overhead" name="overhead" type="number" min="0" step="0.01" value="8" required />
+          </label>
+        </div>
+
+        <section id="sell-section">
+          <h2>Sell Settings</h2>
+          <div class="grid two">
+            <label>
+              Target Margin (%)
+              <input id="sell-margin" name="sellMargin" type="number" min="0" max="95" step="0.01" value="30" required />
+            </label>
+            <label>
+              Discount Offered (%)
+              <input id="discount" name="discount" type="number" min="0" max="95" step="0.01" value="0" required />
+            </label>
+          </div>
+        </section>
+
+        <section id="rental-section" class="hidden">
+          <h2>Rental Settings</h2>
+          <div class="grid three">
+            <label>
+              Rental Term (months)
+              <input id="term" name="term" type="number" min="1" step="1" value="36" />
+            </label>
+            <label>
+              Residual Value at End (USD)
+              <input id="residual" name="residual" type="number" min="0" step="0.01" value="200" />
+            </label>
+            <label>
+              Utilization Rate (%)
+              <input id="utilization" name="utilization" type="number" min="1" max="100" step="0.01" value="85" />
+            </label>
+            <label>
+              Annual Finance Rate (%)
+              <input id="finance-rate" name="financeRate" type="number" min="0" max="100" step="0.01" value="6" />
+            </label>
+            <label>
+              Annual Maintenance (%)
+              <input id="maintenance-rate" name="maintenanceRate" type="number" min="0" max="100" step="0.01" value="5" />
+            </label>
+            <label>
+              Target Margin (%)
+              <input id="rental-margin" name="rentalMargin" type="number" min="0" max="95" step="0.01" value="35" />
+            </label>
+          </div>
+        </section>
+
+        <button type="submit">Calculate</button>
+      </form>
+
+      <section id="results" class="card hidden" aria-live="polite">
+        <h2>Result</h2>
+        <div id="result-summary"></div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
