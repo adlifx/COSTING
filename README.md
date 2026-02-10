@@ -14,3 +14,10 @@ Professional web app for daily ICT pricing decisions in Malaysia.
 python3 -m http.server 8000
 ```
 Open `http://localhost:8000/index.html`.
+
+
+## Where data is stored
+- Calculations are generated in-page (not automatically persisted).
+- Data is saved only when you click **Save to Analysis Board**.
+- Saved scenarios are stored in your browser `localStorage` under key `ict-costing-analysis-board-v2` (device/browser specific).
+- Use **Export CSV** to keep an external backup or share analysis.
