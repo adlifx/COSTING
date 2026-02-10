@@ -13,6 +13,7 @@ const clearBoardButton = document.getElementById('clear-board');
 const STORAGE_KEY = 'ict-costing-analysis-board-v2';
 let lastResult = null;
 let board = [];
+let board = loadBoard();
 
 const asNumber = (value) => Number.parseFloat(value) || 0;
 const pct = (value) => asNumber(value) / 100;
@@ -123,6 +124,27 @@ function calculateRental(data) {
     annualRevenue: monthlyRevenueExSst * 12,
     annualGrossProfit: monthlyGrossProfit * 12,
     riskAdjustedProfit,
+
+  const monthlyDepreciation = (base.totalCost - residual) / term;
+  const monthlyFinance = (base.totalCost * financeRate) / 12;
+  const monthlyMaintenance = (base.totalCost * maintenanceRate) / 12;
+  const monthlyCostAtFullUse = monthlyDepreciation + monthlyFinance + monthlyMaintenance;
+
+  const monthlyCost = monthlyCostAtFullUse / utilization;
+  const recommendedMonthlyRate = targetMargin >= 0.95 ? 0 : monthlyCost / (1 - targetMargin);
+  const actualMargin = recommendedMonthlyRate > 0 ? (recommendedMonthlyRate - monthlyCost) / recommendedMonthlyRate : 0;
+
+  return {
+    mode: 'Rental',
+    ...base,
+    monthlyDepreciation,
+    monthlyFinance,
+    monthlyMaintenance,
+    monthlyCost,
+    recommendedMonthlyRate,
+    actualMargin,
+    targetMargin,
+    annualRevenuePerUnit: recommendedMonthlyRate * 12,
   };
 }
 
@@ -173,6 +195,17 @@ function loadBoard() {
     return Array.isArray(parsed) ? parsed : [];
   } catch (error) {
     console.warn('Unable to load board from localStorage:', error);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(board));
+}
+
+function loadBoard() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return [];
+
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
     return [];
   }
 }
@@ -250,6 +283,7 @@ function exportBoardToCsv() {
   const csv = [headers, ...rows]
     .map((line) => line.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
     .join('\n');
+  const csv = [headers, ...rows].map((line) => line.map((v) => `"${String(v).replaceAll('"', '""')}"`).join(',')).join('\n');
 
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
@@ -262,6 +296,58 @@ function exportBoardToCsv() {
 
 function runCalculation() {
   const data = Object.fromEntries(new FormData(form).entries());
+function handleSubmit(event) {
+  event.preventDefault();
+
+  const data = Object.fromEntries(new FormData(form).entries());
+  return `
+    <article class="metric">
+      <h3>${label}</h3>
+      <strong>${value}</strong>
+    </article>
+  `;
+}
+
+function renderSell(result, itemName) {
+  summaryContainer.innerHTML = `
+    <p><strong>${itemName}</strong> • ${result.mode} model</p>
+    <div class="result-grid">
+      ${renderMetric('Direct Cost', usd(result.directCost))}
+      ${renderMetric('Overhead Cost', usd(result.overheadCost))}
+      ${renderMetric('Total Cost', usd(result.totalCost))}
+      ${renderMetric('List Price', usd(result.listPrice))}
+      ${renderMetric('Net Sell Price', usd(result.netSellPrice))}
+      ${renderMetric('Target Margin', percent(result.targetMargin))}
+      ${renderMetric('Actual Margin (after discount)', percent(result.actualMargin))}
+    </div>
+  `;
+}
+
+function renderRental(result, itemName) {
+  summaryContainer.innerHTML = `
+    <p><strong>${itemName}</strong> • ${result.mode} model</p>
+    <div class="result-grid">
+      ${renderMetric('Direct Cost', usd(result.directCost))}
+      ${renderMetric('Overhead Cost', usd(result.overheadCost))}
+      ${renderMetric('Total Cost', usd(result.totalCost))}
+      ${renderMetric('Monthly Cost (utilization-adjusted)', usd(result.monthlyCost))}
+      ${renderMetric('Recommended Monthly Rate', usd(result.recommendedMonthlyRate))}
+      ${renderMetric('Annual Revenue per Unit', usd(result.annualRevenuePerUnit))}
+      ${renderMetric('Target Margin', percent(result.targetMargin))}
+      ${renderMetric('Actual Margin', percent(result.actualMargin))}
+    </div>
+  `;
+}
+
+modelSelect.addEventListener('change', toggleModelSections);
+
+toggleModelSections();
+renderBoard();
+
+form.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const data = Object.fromEntries(new FormData(form).entries());
+
   lastResult = data.businessModel === 'sell' ? calculateSell(data) : calculateRental(data);
 
   if (data.businessModel === 'sell') {
@@ -293,6 +379,8 @@ function init() {
     !exportCsvButton ||
     !clearBoardButton
   ) {
+function init() {
+  if (!form || !modelSelect || !summaryContainer || !resultsSection || !analysisBody || !saveScenarioButton || !exportCsvButton || !clearBoardButton) {
     console.error('Calculator failed to initialize: missing required DOM elements.');
     return;
   }
@@ -302,6 +390,7 @@ function init() {
   modelSelect.addEventListener('change', toggleModelSections);
   calculateScenarioButton.addEventListener('click', runCalculation);
   form.addEventListener('keydown', handleEnterToCalculate);
+  form.addEventListener('submit', handleSubmit);
 
   saveScenarioButton.addEventListener('click', () => {
     if (!lastResult) {
@@ -332,3 +421,40 @@ if (document.readyState === 'loading') {
 } else {
   init();
 }
+
+form.addEventListener('submit', (event) => {
+  event.preventDefault();
+
+  const data = Object.fromEntries(new FormData(form).entries());
+  const itemName = data.itemName?.trim() || 'ICT Item';
+
+  const result = data.businessModel === 'sell' ? calculateSell(data) : calculateRental(data);
+
+  if (data.businessModel === 'sell') {
+    renderSell(result, itemName);
+  } else {
+    renderRental(result, itemName);
+  }
+
+  resultsSection.classList.remove('hidden');
+});
+
+saveScenarioButton.addEventListener('click', () => {
+  if (!lastResult) {
+    alert('Calculate a scenario first before saving to the analysis board.');
+    return;
+  }
+
+  board.unshift(normalizeBoardRow(lastResult));
+  board = board.slice(0, 100);
+  saveBoard();
+  renderBoard();
+});
+
+exportCsvButton.addEventListener('click', exportBoardToCsv);
+
+clearBoardButton.addEventListener('click', () => {
+  board = [];
+  saveBoard();
+  renderBoard();
+});
