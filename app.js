@@ -122,6 +122,27 @@ function calculateRental(data) {
     annualRevenue: monthlyRevenueExSst * 12,
     annualGrossProfit: monthlyGrossProfit * 12,
     riskAdjustedProfit,
+
+  const monthlyDepreciation = (base.totalCost - residual) / term;
+  const monthlyFinance = (base.totalCost * financeRate) / 12;
+  const monthlyMaintenance = (base.totalCost * maintenanceRate) / 12;
+  const monthlyCostAtFullUse = monthlyDepreciation + monthlyFinance + monthlyMaintenance;
+
+  const monthlyCost = monthlyCostAtFullUse / utilization;
+  const recommendedMonthlyRate = targetMargin >= 0.95 ? 0 : monthlyCost / (1 - targetMargin);
+  const actualMargin = recommendedMonthlyRate > 0 ? (recommendedMonthlyRate - monthlyCost) / recommendedMonthlyRate : 0;
+
+  return {
+    mode: 'Rental',
+    ...base,
+    monthlyDepreciation,
+    monthlyFinance,
+    monthlyMaintenance,
+    monthlyCost,
+    recommendedMonthlyRate,
+    actualMargin,
+    targetMargin,
+    annualRevenuePerUnit: recommendedMonthlyRate * 12,
   };
 }
 
@@ -250,6 +271,43 @@ function exportBoardToCsv() {
   link.download = `ict-analysis-${new Date().toISOString().slice(0, 10)}.csv`;
   link.click();
   URL.revokeObjectURL(url);
+  return `
+    <article class="metric">
+      <h3>${label}</h3>
+      <strong>${value}</strong>
+    </article>
+  `;
+}
+
+function renderSell(result, itemName) {
+  summaryContainer.innerHTML = `
+    <p><strong>${itemName}</strong> • ${result.mode} model</p>
+    <div class="result-grid">
+      ${renderMetric('Direct Cost', usd(result.directCost))}
+      ${renderMetric('Overhead Cost', usd(result.overheadCost))}
+      ${renderMetric('Total Cost', usd(result.totalCost))}
+      ${renderMetric('List Price', usd(result.listPrice))}
+      ${renderMetric('Net Sell Price', usd(result.netSellPrice))}
+      ${renderMetric('Target Margin', percent(result.targetMargin))}
+      ${renderMetric('Actual Margin (after discount)', percent(result.actualMargin))}
+    </div>
+  `;
+}
+
+function renderRental(result, itemName) {
+  summaryContainer.innerHTML = `
+    <p><strong>${itemName}</strong> • ${result.mode} model</p>
+    <div class="result-grid">
+      ${renderMetric('Direct Cost', usd(result.directCost))}
+      ${renderMetric('Overhead Cost', usd(result.overheadCost))}
+      ${renderMetric('Total Cost', usd(result.totalCost))}
+      ${renderMetric('Monthly Cost (utilization-adjusted)', usd(result.monthlyCost))}
+      ${renderMetric('Recommended Monthly Rate', usd(result.recommendedMonthlyRate))}
+      ${renderMetric('Annual Revenue per Unit', usd(result.annualRevenuePerUnit))}
+      ${renderMetric('Target Margin', percent(result.targetMargin))}
+      ${renderMetric('Actual Margin', percent(result.actualMargin))}
+    </div>
+  `;
 }
 
 modelSelect.addEventListener('change', toggleModelSections);
@@ -267,6 +325,19 @@ form.addEventListener('submit', (event) => {
     renderSell(lastResult);
   } else {
     renderRental(lastResult);
+
+form.addEventListener('submit', (event) => {
+  event.preventDefault();
+
+  const data = Object.fromEntries(new FormData(form).entries());
+  const itemName = data.itemName?.trim() || 'ICT Item';
+
+  const result = data.businessModel === 'sell' ? calculateSell(data) : calculateRental(data);
+
+  if (data.businessModel === 'sell') {
+    renderSell(result, itemName);
+  } else {
+    renderRental(result, itemName);
   }
 
   resultsSection.classList.remove('hidden');
