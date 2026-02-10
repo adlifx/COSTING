@@ -11,6 +11,7 @@ const clearBoardButton = document.getElementById('clear-board');
 
 const STORAGE_KEY = 'ict-costing-analysis-board-v2';
 let lastResult = null;
+let board = [];
 let board = loadBoard();
 
 const asNumber = (value) => Number.parseFloat(value) || 0;
@@ -177,6 +178,22 @@ function renderRental(result) {
 }
 
 function saveBoard() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(board));
+  } catch (error) {
+    console.warn('Unable to save board to localStorage:', error);
+  }
+}
+
+function loadBoard() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.warn('Unable to load board from localStorage:', error);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(board));
 }
 
@@ -262,6 +279,9 @@ function exportBoardToCsv() {
     row.riskAdjustedProfit.toFixed(2),
   ]);
 
+  const csv = [headers, ...rows]
+    .map((line) => line.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
+    .join('\n');
   const csv = [headers, ...rows].map((line) => line.map((v) => `"${String(v).replaceAll('"', '""')}"`).join(',')).join('\n');
 
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -271,6 +291,12 @@ function exportBoardToCsv() {
   link.download = `ict-analysis-${new Date().toISOString().slice(0, 10)}.csv`;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+function handleSubmit(event) {
+  event.preventDefault();
+
+  const data = Object.fromEntries(new FormData(form).entries());
   return `
     <article class="metric">
       <h3>${label}</h3>
@@ -325,6 +351,51 @@ form.addEventListener('submit', (event) => {
     renderSell(lastResult);
   } else {
     renderRental(lastResult);
+  }
+
+  resultsSection.classList.remove('hidden');
+}
+
+function init() {
+  if (!form || !modelSelect || !summaryContainer || !resultsSection || !analysisBody || !saveScenarioButton || !exportCsvButton || !clearBoardButton) {
+    console.error('Calculator failed to initialize: missing required DOM elements.');
+    return;
+  }
+
+  board = loadBoard();
+
+  modelSelect.addEventListener('change', toggleModelSections);
+  form.addEventListener('submit', handleSubmit);
+
+  saveScenarioButton.addEventListener('click', () => {
+    if (!lastResult) {
+      alert('Calculate a scenario first before saving to the analysis board.');
+      return;
+    }
+
+    board.unshift(normalizeBoardRow(lastResult));
+    board = board.slice(0, 100);
+    saveBoard();
+    renderBoard();
+  });
+
+  exportCsvButton.addEventListener('click', exportBoardToCsv);
+
+  clearBoardButton.addEventListener('click', () => {
+    board = [];
+    saveBoard();
+    renderBoard();
+  });
+
+  toggleModelSections();
+  renderBoard();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
 
 form.addEventListener('submit', (event) => {
   event.preventDefault();
