@@ -5,6 +5,7 @@ const rentalSection = document.getElementById('rental-section');
 const resultsSection = document.getElementById('results');
 const summaryContainer = document.getElementById('result-summary');
 const analysisBody = document.getElementById('analysis-body');
+const calculateScenarioButton = document.getElementById('calculate-scenario');
 const saveScenarioButton = document.getElementById('save-scenario');
 const exportCsvButton = document.getElementById('export-csv');
 const clearBoardButton = document.getElementById('clear-board');
@@ -293,6 +294,8 @@ function exportBoardToCsv() {
   URL.revokeObjectURL(url);
 }
 
+function runCalculation() {
+  const data = Object.fromEntries(new FormData(form).entries());
 function handleSubmit(event) {
   event.preventDefault();
 
@@ -356,6 +359,26 @@ form.addEventListener('submit', (event) => {
   resultsSection.classList.remove('hidden');
 }
 
+function handleEnterToCalculate(event) {
+  if (event.key !== 'Enter') return;
+  if (event.target.tagName === 'TEXTAREA') return;
+
+  event.preventDefault();
+  runCalculation();
+}
+
+function init() {
+  if (
+    !form ||
+    !modelSelect ||
+    !summaryContainer ||
+    !resultsSection ||
+    !analysisBody ||
+    !calculateScenarioButton ||
+    !saveScenarioButton ||
+    !exportCsvButton ||
+    !clearBoardButton
+  ) {
 function init() {
   if (!form || !modelSelect || !summaryContainer || !resultsSection || !analysisBody || !saveScenarioButton || !exportCsvButton || !clearBoardButton) {
     console.error('Calculator failed to initialize: missing required DOM elements.');
@@ -365,6 +388,8 @@ function init() {
   board = loadBoard();
 
   modelSelect.addEventListener('change', toggleModelSections);
+  calculateScenarioButton.addEventListener('click', runCalculation);
+  form.addEventListener('keydown', handleEnterToCalculate);
   form.addEventListener('submit', handleSubmit);
 
   saveScenarioButton.addEventListener('click', () => {
