@@ -1,15 +1,16 @@
-# ICT Costing & Margin Calculator
+# Malaysia ICT Costing & Margin Analysis Suite
 
-Simple web app to calculate costing and margin for:
-- **Sell** model
-- **Rental** model
+Professional web app for daily ICT pricing decisions in Malaysia.
 
-## Run
+## What it supports
+- Sell model analysis (margin, discount impact, commission, win-probability risk adjustment)
+- Rental model analysis (depreciation, finance/maintenance, utilization-adjusted rate, SLA effect)
+- Malaysian currency formatting (MYR) and SST input
+- Scenario board to save and compare cases
+- CSV export for reporting and deeper analysis in Excel/BI tools
 
-Open `index.html` directly in browser, or run:
-
+## Run locally
 ```bash
 python3 -m http.server 8000
 ```
-
-Then open `http://localhost:8000`.
+Open `http://localhost:8000/index.html`.
