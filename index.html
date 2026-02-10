@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Malaysia ICT Costing, Margin & Analysis Suite</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header class="page-header">
+        <div>
+          <h1>Malaysia ICT Costing & Margin Analysis Suite</h1>
+          <p class="intro">
+            Professional daily-use calculator for <strong>Sell</strong> and <strong>Rental</strong> models,
+            tailored for Malaysian operations (MYR + SST support).
+          </p>
+        </div>
+        <div class="badge">Daily Ops Ready</div>
+      </header>
+
+      <form id="calculator-form" class="card">
+        <h2>Scenario Setup</h2>
+        <div class="grid four">
+          <label>
+            Scenario Name
+            <input id="scenario-name" name="scenarioName" type="text" placeholder="Q1 Laptop Rollout" required />
+          </label>
+          <label>
+            Item Name
+            <input id="item-name" name="itemName" type="text" placeholder="Laptop, Firewall, AP..." required />
+          </label>
+          <label>
+            Business Model
+            <select id="business-model" name="businessModel">
+              <option value="sell">Sell</option>
+              <option value="rental">Rental</option>
+            </select>
+          </label>
+          <label>
+            Quantity (units)
+            <input id="quantity" name="quantity" type="number" min="1" step="1" value="10" required />
+          </label>
+        </div>
+
+        <h2>Base Costing (per unit)</h2>
+        <div class="grid four">
+          <label>
+            Unit Cost (MYR)
+            <input id="unit-cost" name="unitCost" type="number" min="0" step="0.01" value="4200" required />
+          </label>
+          <label>
+            Logistics & Installation (MYR)
+            <input id="logistics-cost" name="logisticsCost" type="number" min="0" step="0.01" value="300" required />
+          </label>
+          <label>
+            Overhead (%)
+            <input id="overhead" name="overhead" type="number" min="0" step="0.01" value="10" required />
+          </label>
+          <label>
+            SST (%)
+            <input id="sst" name="sst" type="number" min="0" step="0.01" value="6" required />
+          </label>
+        </div>
+
+        <section id="sell-section">
+          <h2>Sell Model Inputs</h2>
+          <div class="grid four">
+            <label>
+              Target Margin (%)
+              <input id="sell-margin" name="sellMargin" type="number" min="0" max="95" step="0.01" value="25" required />
+            </label>
+            <label>
+              Discount Offered (%)
+              <input id="discount" name="discount" type="number" min="0" max="95" step="0.01" value="3" required />
+            </label>
+            <label>
+              Expected Win Probability (%)
+              <input id="win-probability" name="winProbability" type="number" min="0" max="100" step="0.01" value="70" required />
+            </label>
+            <label>
+              Sales Commission (%)
+              <input id="commission-rate" name="commissionRate" type="number" min="0" max="100" step="0.01" value="2" required />
+            </label>
+          </div>
+        </section>
+
+        <section id="rental-section" class="hidden">
+          <h2>Rental Model Inputs</h2>
+          <div class="grid four">
+            <label>
+              Rental Term (months)
+              <input id="term" name="term" type="number" min="1" step="1" value="36" />
+            </label>
+            <label>
+              Residual Value (MYR)
+              <input id="residual" name="residual" type="number" min="0" step="0.01" value="500" />
+            </label>
+            <label>
+              Utilization Rate (%)
+              <input id="utilization" name="utilization" type="number" min="1" max="100" step="0.01" value="85" />
+            </label>
+            <label>
+              Annual Finance Rate (%)
+              <input id="finance-rate" name="financeRate" type="number" min="0" max="100" step="0.01" value="6" />
+            </label>
+            <label>
+              Annual Maintenance (%)
+              <input id="maintenance-rate" name="maintenanceRate" type="number" min="0" max="100" step="0.01" value="5" />
+            </label>
+            <label>
+              Target Margin (%)
+              <input id="rental-margin" name="rentalMargin" type="number" min="0" max="95" step="0.01" value="30" />
+            </label>
+            <label>
+              Uptime SLA (%)
+              <input id="sla" name="sla" type="number" min="50" max="100" step="0.01" value="99.5" />
+            </label>
+            <label>
+              Deployment Cost (one-off, MYR)
+              <input id="deployment" name="deployment" type="number" min="0" step="0.01" value="1200" />
+            </label>
+          </div>
+        </section>
+
+        <div class="action-row">
+          <button type="button" id="calculate-scenario">Calculate Scenario</button>
+          <button type="button" id="save-scenario" class="secondary">Save to Analysis Board</button>
+          <button type="button" id="export-csv" class="secondary">Export CSV</button>
+          <button type="button" id="clear-board" class="danger">Clear Board</button>
+        </div>
+      </form>
+
+      <section id="results" class="card hidden" aria-live="polite">
+        <h2>Scenario Result</h2>
+        <div id="result-summary" class="result-grid"></div>
+      </section>
+
+      <section class="card">
+        <h2>Analysis Board</h2>
+        <p class="intro">Store multiple scenarios, compare profitability, and use for daily decision making.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Scenario</th>
+                <th>Model</th>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Revenue</th>
+                <th>Total Cost</th>
+                <th>Gross Profit</th>
+                <th>Margin</th>
+                <th>Risk-adjusted Profit</th>
+              </tr>
+            </thead>
+            <tbody id="analysis-body">
+              <tr><td colspan="9" class="muted">No scenarios saved yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
